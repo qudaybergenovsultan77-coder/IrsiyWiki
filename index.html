@@ -1,39 +1,91 @@
+<!-- FULL FINAL VERSION: Original UI + Firebase -->
 <!DOCTYPE html>
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IrsiyWiki Pro</title>
-
-<!-- Firebase + Auth + DOMPurify -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-
+<title>IrsiyWiki</title>
 <style>
-body{font-family:sans-serif;background:#f5f5f5;padding:20px}
-.top{display:flex;justify-content:space-between;align-items:center}
-.card{background:#fff;padding:15px;margin:10px;border-radius:10px}
-button{padding:6px 10px;margin:5px}
-input,textarea{padding:6px;margin:5px;width:100%}
-.admin{background:#ffe0e0;padding:10px;margin:10px;border-radius:10px}
+body{font-family:sans-serif;background:#f4f6f8;margin:0}
+.topbar{background:#0E7C5A;color:#fff;padding:15px;font-size:20px}
+.container{padding:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
+button{padding:6px 10px;border:none;border-radius:6px;background:#0E7C5A;color:#fff;cursor:pointer}
+input,textarea{width:100%;padding:8px;margin:5px 0;border:1px solid #ccc;border-radius:6px}
 </style>
 </head>
 <body>
 
-<div class="top">
-<h2>IrsiyWiki Pro</h2>
-<div id="authArea"></div>
+<div class="topbar">IrsiyWiki</div>
+
+<div class="container">
+  <h3>Yangi maqola</h3>
+  <input id="title" placeholder="Sarlavha">
+  <textarea id="body" placeholder="Matn"></textarea>
+  <button onclick="saveArticle()">Saqlash</button>
+
+  <h3>Maqolalar</h3>
+  <div class="grid" id="articles"></div>
 </div>
 
-<div id="adminPanel" class="admin" style="display:none;">
-<h3>Admin Panel</h3>
-<input id="title" placeholder="Title">
-<input id="exc" placeholder="Qisqa tavsif">
-<textarea id="body" placeholder="HTML content"></textarea>
-<button onclick="addArticle()">Saqlash</button>
-</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCb83Hs6DGVRW-5DhMnzIZ2QWSn8u8PfB4",
+  authDomain: "irsiywiki.firebaseapp.com",
+  projectId: "irsiywiki",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function saveArticle(){
+  const title = document.getElementById("title").value;
+  const body = document.getElementById("body").value;
+
+  if(!title) return alert("Sarlavha yoz!");
+
+  await addDoc(collection(db, "articles"), {
+    title, body, date: new Date().toISOString()
+  });
+
+  document.getElementById("title").value="";
+  document.getElementById("body").value="";
+
+  loadArticles();
+}
+
+async function loadArticles(){
+  const snap = await getDocs(collection(db, "articles"));
+  const box = document.getElementById("articles");
+  box.innerHTML="";
+
+  snap.forEach(d=>{
+    const a = d.data();
+    const el = document.createElement("div");
+    el.className="card";
+    el.innerHTML = `
+      <h4>${a.title}</h4>
+      <p>${a.body}</p>
+      <button onclick="del('${d.id}')">O'chirish</button>
+    `;
+    box.appendChild(el);
+  });
+}
+
+window.del = async function(id){
+  await deleteDoc(doc(db, "articles", id));
+  loadArticles();
+}
+
+loadArticles();
+</script>
+
+</body>
+</html>
 
 <div id="list"></div>
 
